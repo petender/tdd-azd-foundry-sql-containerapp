@@ -1,0 +1,14 @@
+name: tdd-azd-foundry-sql-containerapp
+metadata:
+  template: tddazd-foundry-sql-containerapp@1.0.0
+infra:
+  provider: bicep
+  path: ./infra
+services:
+  web:
+    project: ./src/LogisticsApp
+    language: dotnet
+    host: containerapp
+    docker:
+      path: ./src/LogisticsApp/Dockerfile
+      context: ./src/LogisticsApp

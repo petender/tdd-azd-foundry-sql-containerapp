@@ -1,0 +1,159 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Logistics Operations Dashboard";
+}
+
+<div class="container-fluid py-4">
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2 fw-bold">
+                <span class="badge bg-primary me-2">AI</span>
+                Logistics Operations Dashboard
+            </h1>
+            <p class="text-muted mb-0">Powered by Azure AI Foundry · Azure Container Apps · Azure SQL</p>
+        </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-4">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="card-body">
+                    <div class="display-6 fw-bold text-primary">@Model.Shipments.Count</div>
+                    <div class="text-muted small">Active Shipments</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="card-body">
+                    <div class="display-6 fw-bold text-danger">@Model.Shipments.Count(s => s.Status == "Delayed")</div>
+                    <div class="text-muted small">Delayed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="card-body">
+                    <div class="display-6 fw-bold text-warning">@Model.Exceptions.Count</div>
+                    <div class="text-muted small">Open Exceptions</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Query -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-semibold">
+                    <i class="bi bi-robot me-1"></i> Ask the AI Logistics Assistant
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div class="input-group">
+                            <input type="text"
+                                   asp-for="UserQuery"
+                                   class="form-control"
+                                   placeholder="e.g. Which shipments are at risk? Summarise the current delays."
+                                   autocomplete="off" />
+                            <button class="btn btn-primary" type="submit">Ask</button>
+                        </div>
+                    </form>
+                    @if (Model.HasAiResponse)
+                    {
+                        <div class="alert alert-info mt-3 mb-0">
+                            <strong>AI Response:</strong><br/>
+                            @Model.AiResponse
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shipments table -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-semibold">Shipments</div>
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Origin</th>
+                                <th>Destination</th>
+                                <th>Status</th>
+                                <th>Expected Delivery</th>
+                                <th>Carrier</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in Model.Shipments)
+                            {
+                                var badge = s.Status switch
+                                {
+                                    "Delayed"   => "badge bg-danger",
+                                    "In Transit"=> "badge bg-primary",
+                                    "On Time"   => "badge bg-success",
+                                    "Delivered" => "badge bg-secondary",
+                                    _           => "badge bg-light text-dark"
+                                };
+                                <tr>
+                                    <td>@s.ShipmentId</td>
+                                    <td>@s.Origin</td>
+                                    <td>@s.Destination</td>
+                                    <td><span class="@badge">@s.Status</span></td>
+                                    <td>@s.ExpectedDelivery.ToString("yyyy-MM-dd")</td>
+                                    <td><code>@s.CarrierId</code></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exceptions -->
+    @if (Model.Exceptions.Any())
+    {
+        <div class="row">
+            <div class="col">
+                <div class="card border-0 shadow-sm border-start border-danger border-3">
+                    <div class="card-header bg-white fw-semibold text-danger">
+                        <i class="bi bi-exclamation-triangle me-1"></i> Active Exceptions
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Shipment #</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Reported</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var e in Model.Exceptions)
+                                {
+                                    <tr>
+                                        <td>@e.ShipmentId</td>
+                                        <td><span class="badge bg-warning text-dark">@e.Type</span></td>
+                                        <td>@e.Description</td>
+                                        <td>@e.ReportedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>

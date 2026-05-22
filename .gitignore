@@ -1,0 +1,61 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.lscache
+
+## azd
+.azure/
+
+## Build & publish
+publish/
+
+## Logs
+applogs/
+
+## Environment
+.env
+
+## IDE
+.idea/
+*.swp
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Archives
+*.zip
+
+## Playwright auth state
+.auth/
+
+## Screenshot tooling
+node_modules/
+package-lock.json
+capture-screenshots.js
+capture-portal-screenshots.js
+capture-portal-screenshots-manual.js
+portal-login.js
+capture_screenshots.py
+
+## Working files (not publishable)
+01-requirements.md
+02-architecture-assessment.md
+03-*.md
+03-*.py
+03-*.png
+04-*.md
+04-*.py
+04-*.png
+04-*.json
+05-*.md
+06-*.md
+07-*.md
+08-*.md
+*.slnx
+assign-rbac.ps1
+validate.ps1
+deploy.ps1
