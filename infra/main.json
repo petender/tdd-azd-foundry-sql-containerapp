@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.41.2.15936",
-      "templateHash": "4902369967315450757"
+      "templateHash": "15373015246792047196"
     }
   },
   "parameters": {
@@ -40,7 +40,7 @@
       "type": "string",
       "defaultValue": "swedencentral",
       "metadata": {
-        "description": "Azure region for AI Foundry resources (must support GPT-4.1-mini)."
+        "description": "Azure region for AI Foundry resources (must support GPT-5.4-mini)."
       }
     },
     "containerImage": {
@@ -68,9 +68,24 @@
     "aiAcctName": "[format('ai-{0}-{1}-{2}', take(parameters('projectName'), 8), take(parameters('environment'), 3), take(variables('uniqueSuffix'), 6))]",
     "aiProjName": "[format('aiproj-{0}-{1}', parameters('projectName'), parameters('environment'))]",
     "caeName": "[format('cae-{0}-{1}', parameters('projectName'), parameters('environment'))]",
-    "caName": "[format('ca-{0}-{1}', take(parameters('projectName'), 16), take(parameters('environment'), 8))]"
+    "caName": "[format('ca-{0}-{1}', take(parameters('projectName'), 16), take(parameters('environment'), 8))]",
+    "caPullIdentityName": "[format('id-{0}-{1}-acrpull', parameters('projectName'), parameters('environment'))]"
   },
   "resources": [
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[resourceId('Microsoft.ContainerRegistry/registries', variables('crName'))]",
+      "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', variables('crName')), variables('caPullIdentityName'), 'AcrPull')]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]",
+        "principalId": "[reference(resourceId('Microsoft.Resources/deployments', format('identity-{0}-deploy', variables('uniqueSuffix'))), '2025-04-01').outputs.principalId.value]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', format('identity-{0}-deploy', variables('uniqueSuffix')))]"
+      ]
+    },
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
@@ -17343,6 +17358,485 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2025-04-01",
+      "name": "[format('identity-{0}-deploy', variables('uniqueSuffix'))]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "name": {
+            "value": "[variables('caPullIdentityName')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "tags": {
+            "value": "[variables('tags')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "languageVersion": "2.0",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.34.44.8038",
+              "templateHash": "16707109626832623586"
+            },
+            "name": "User Assigned Identities",
+            "description": "This module deploys a User Assigned Identity."
+          },
+          "definitions": {
+            "federatedIdentityCredentialType": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Required. The name of the federated identity credential."
+                  }
+                },
+                "audiences": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "metadata": {
+                    "description": "Required. The list of audiences that can appear in the issued token."
+                  }
+                },
+                "issuer": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Required. The URL of the issuer to be trusted."
+                  }
+                },
+                "subject": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Required. The identifier of the external identity."
+                  }
+                }
+              },
+              "metadata": {
+                "__bicep_export!": true,
+                "description": "The type for the federated identity credential."
+              }
+            },
+            "lockType": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "nullable": true,
+                  "metadata": {
+                    "description": "Optional. Specify the name of lock."
+                  }
+                },
+                "kind": {
+                  "type": "string",
+                  "allowedValues": [
+                    "CanNotDelete",
+                    "None",
+                    "ReadOnly"
+                  ],
+                  "nullable": true,
+                  "metadata": {
+                    "description": "Optional. Specify the type of lock."
+                  }
+                }
+              },
+              "metadata": {
+                "description": "An AVM-aligned type for a lock.",
+                "__bicep_imported_from!": {
+                  "sourceTemplate": "br:mcr.microsoft.com/bicep/avm/utl/types/avm-common-types:0.5.1"
+                }
+              }
+            },
+            "roleAssignmentType": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "nullable": true,
+                  "metadata": {
+                    "description": "Optional. The name (as GUID) of the role assignment. If not provided, a GUID will be generated."
+                  }
+                },
+                "roleDefinitionIdOrName": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Required. The role to assign. You can provide either the display name of the role definition, the role definition GUID, or its fully qualified ID in the following format: '/providers/Microsoft.Authorization/roleDefinitions/c2f4ef07-c644-48eb-af81-4b1b4947fb11'."
+                  }
+                },
+                "principalId": {
+                  "type": "string",
+                  "metadata": {
+                    "description": "Required. The principal ID of the principal (user/group/identity) to assign the role to."
+                  }
+                },
+                "principalType": {
+                  "type": "string",
+                  "allowedValues": [
+                    "Device",
+                    "ForeignGroup",
+                    "Group",
+                    "ServicePrincipal",
+                    "User"
+                  ],
+                  "nullable": true,
+                  "metadata": {
+                    "description": "Optional. The principal type of the assigned principal ID."
+                  }
+                },
+                "description": {
+                  "type": "string",
+                  "nullable": true,
+                  "metadata": {
+                    "description": "Optional. The description of the role assignment."
+                  }
+                },
+                "condition": {
+                  "type": "string",
+                  "nullable": true,
+                  "metadata": {
+                    "description": "Optional. The conditions on the role assignment. This limits the resources it can be assigned to. e.g.: @Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase \"foo_storage_container\"."
+                  }
+                },
+                "conditionVersion": {
+                  "type": "string",
+                  "allowedValues": [
+                    "2.0"
+                  ],
+                  "nullable": true,
+                  "metadata": {
+                    "description": "Optional. Version of the condition."
+                  }
+                },
+                "delegatedManagedIdentityResourceId": {
+                  "type": "string",
+                  "nullable": true,
+                  "metadata": {
+                    "description": "Optional. The Resource Id of the delegated managed identity resource."
+                  }
+                }
+              },
+              "metadata": {
+                "description": "An AVM-aligned type for a role assignment.",
+                "__bicep_imported_from!": {
+                  "sourceTemplate": "br:mcr.microsoft.com/bicep/avm/utl/types/avm-common-types:0.5.1"
+                }
+              }
+            }
+          },
+          "parameters": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "Required. Name of the User Assigned Identity."
+              }
+            },
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Optional. Location for all resources."
+              }
+            },
+            "federatedIdentityCredentials": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/federatedIdentityCredentialType"
+              },
+              "nullable": true,
+              "metadata": {
+                "description": "Optional. The federated identity credentials list to indicate which token from the external IdP should be trusted by your application. Federated identity credentials are supported on applications only. A maximum of 20 federated identity credentials can be added per application object."
+              }
+            },
+            "lock": {
+              "$ref": "#/definitions/lockType",
+              "nullable": true,
+              "metadata": {
+                "description": "Optional. The lock settings of the service."
+              }
+            },
+            "roleAssignments": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/roleAssignmentType"
+              },
+              "nullable": true,
+              "metadata": {
+                "description": "Optional. Array of role assignments to create."
+              }
+            },
+            "tags": {
+              "type": "object",
+              "nullable": true,
+              "metadata": {
+                "description": "Optional. Tags of the resource."
+              }
+            },
+            "enableTelemetry": {
+              "type": "bool",
+              "defaultValue": true,
+              "metadata": {
+                "description": "Optional. Enable/Disable usage telemetry for module."
+              }
+            }
+          },
+          "variables": {
+            "copy": [
+              {
+                "name": "formattedRoleAssignments",
+                "count": "[length(coalesce(parameters('roleAssignments'), createArray()))]",
+                "input": "[union(coalesce(parameters('roleAssignments'), createArray())[copyIndex('formattedRoleAssignments')], createObject('roleDefinitionId', coalesce(tryGet(variables('builtInRoleNames'), coalesce(parameters('roleAssignments'), createArray())[copyIndex('formattedRoleAssignments')].roleDefinitionIdOrName), if(contains(coalesce(parameters('roleAssignments'), createArray())[copyIndex('formattedRoleAssignments')].roleDefinitionIdOrName, '/providers/Microsoft.Authorization/roleDefinitions/'), coalesce(parameters('roleAssignments'), createArray())[copyIndex('formattedRoleAssignments')].roleDefinitionIdOrName, subscriptionResourceId('Microsoft.Authorization/roleDefinitions', coalesce(parameters('roleAssignments'), createArray())[copyIndex('formattedRoleAssignments')].roleDefinitionIdOrName)))))]"
+              }
+            ],
+            "builtInRoleNames": {
+              "Contributor": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+              "Managed Identity Contributor": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'e40ec5ca-96e0-45a2-b4ff-59039f2c2b59')]",
+              "Managed Identity Operator": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'f1a07417-d97a-45cb-824c-7a7467783830')]",
+              "Owner": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8e3af657-a8ff-443c-a75c-2fe8c4bcb635')]",
+              "Reader": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'acdd72a7-3385-48ef-bd42-f606fba81ae7')]",
+              "Role Based Access Control Administrator": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'f58310d9-a9f6-439a-9e8d-f62e7b41a168')]",
+              "User Access Administrator": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '18d7d88d-d35e-4fb5-a5c3-7773c20a72d9')]"
+            }
+          },
+          "resources": {
+            "avmTelemetry": {
+              "condition": "[parameters('enableTelemetry')]",
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2024-03-01",
+              "name": "[format('46d3xbcp.res.managedidentity-userassignedidentity.{0}.{1}', replace('0.4.1', '.', '-'), substring(uniqueString(deployment().name, parameters('location')), 0, 4))]",
+              "properties": {
+                "mode": "Incremental",
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "resources": [],
+                  "outputs": {
+                    "telemetry": {
+                      "type": "String",
+                      "value": "For more information, see https://aka.ms/avm/TelemetryInfo"
+                    }
+                  }
+                }
+              }
+            },
+            "userAssignedIdentity": {
+              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+              "apiVersion": "2024-11-30",
+              "name": "[parameters('name')]",
+              "location": "[parameters('location')]",
+              "tags": "[parameters('tags')]"
+            },
+            "userAssignedIdentity_lock": {
+              "condition": "[and(not(empty(coalesce(parameters('lock'), createObject()))), not(equals(tryGet(parameters('lock'), 'kind'), 'None')))]",
+              "type": "Microsoft.Authorization/locks",
+              "apiVersion": "2020-05-01",
+              "scope": "[format('Microsoft.ManagedIdentity/userAssignedIdentities/{0}', parameters('name'))]",
+              "name": "[coalesce(tryGet(parameters('lock'), 'name'), format('lock-{0}', parameters('name')))]",
+              "properties": {
+                "level": "[coalesce(tryGet(parameters('lock'), 'kind'), '')]",
+                "notes": "[if(equals(tryGet(parameters('lock'), 'kind'), 'CanNotDelete'), 'Cannot delete resource or child resources.', 'Cannot delete or modify the resource or child resources.')]"
+              },
+              "dependsOn": [
+                "userAssignedIdentity"
+              ]
+            },
+            "userAssignedIdentity_roleAssignments": {
+              "copy": {
+                "name": "userAssignedIdentity_roleAssignments",
+                "count": "[length(coalesce(variables('formattedRoleAssignments'), createArray()))]"
+              },
+              "type": "Microsoft.Authorization/roleAssignments",
+              "apiVersion": "2022-04-01",
+              "scope": "[format('Microsoft.ManagedIdentity/userAssignedIdentities/{0}', parameters('name'))]",
+              "name": "[coalesce(tryGet(coalesce(variables('formattedRoleAssignments'), createArray())[copyIndex()], 'name'), guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name')), coalesce(variables('formattedRoleAssignments'), createArray())[copyIndex()].principalId, coalesce(variables('formattedRoleAssignments'), createArray())[copyIndex()].roleDefinitionId))]",
+              "properties": {
+                "roleDefinitionId": "[coalesce(variables('formattedRoleAssignments'), createArray())[copyIndex()].roleDefinitionId]",
+                "principalId": "[coalesce(variables('formattedRoleAssignments'), createArray())[copyIndex()].principalId]",
+                "description": "[tryGet(coalesce(variables('formattedRoleAssignments'), createArray())[copyIndex()], 'description')]",
+                "principalType": "[tryGet(coalesce(variables('formattedRoleAssignments'), createArray())[copyIndex()], 'principalType')]",
+                "condition": "[tryGet(coalesce(variables('formattedRoleAssignments'), createArray())[copyIndex()], 'condition')]",
+                "conditionVersion": "[if(not(empty(tryGet(coalesce(variables('formattedRoleAssignments'), createArray())[copyIndex()], 'condition'))), coalesce(tryGet(coalesce(variables('formattedRoleAssignments'), createArray())[copyIndex()], 'conditionVersion'), '2.0'), null())]",
+                "delegatedManagedIdentityResourceId": "[tryGet(coalesce(variables('formattedRoleAssignments'), createArray())[copyIndex()], 'delegatedManagedIdentityResourceId')]"
+              },
+              "dependsOn": [
+                "userAssignedIdentity"
+              ]
+            },
+            "userAssignedIdentity_federatedIdentityCredentials": {
+              "copy": {
+                "name": "userAssignedIdentity_federatedIdentityCredentials",
+                "count": "[length(coalesce(parameters('federatedIdentityCredentials'), createArray()))]",
+                "mode": "serial",
+                "batchSize": 1
+              },
+              "type": "Microsoft.Resources/deployments",
+              "apiVersion": "2022-09-01",
+              "name": "[format('{0}-UserMSI-FederatedIdentityCred-{1}', uniqueString(deployment().name, parameters('location')), copyIndex())]",
+              "properties": {
+                "expressionEvaluationOptions": {
+                  "scope": "inner"
+                },
+                "mode": "Incremental",
+                "parameters": {
+                  "name": {
+                    "value": "[coalesce(parameters('federatedIdentityCredentials'), createArray())[copyIndex()].name]"
+                  },
+                  "userAssignedIdentityName": {
+                    "value": "[parameters('name')]"
+                  },
+                  "audiences": {
+                    "value": "[coalesce(parameters('federatedIdentityCredentials'), createArray())[copyIndex()].audiences]"
+                  },
+                  "issuer": {
+                    "value": "[coalesce(parameters('federatedIdentityCredentials'), createArray())[copyIndex()].issuer]"
+                  },
+                  "subject": {
+                    "value": "[coalesce(parameters('federatedIdentityCredentials'), createArray())[copyIndex()].subject]"
+                  }
+                },
+                "template": {
+                  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                  "contentVersion": "1.0.0.0",
+                  "metadata": {
+                    "_generator": {
+                      "name": "bicep",
+                      "version": "0.34.44.8038",
+                      "templateHash": "13656021764446440473"
+                    },
+                    "name": "User Assigned Identity Federated Identity Credential",
+                    "description": "This module deploys a User Assigned Identity Federated Identity Credential."
+                  },
+                  "parameters": {
+                    "userAssignedIdentityName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Conditional. The name of the parent user assigned identity. Required if the template is used in a standalone deployment."
+                      }
+                    },
+                    "name": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Required. The name of the secret."
+                      }
+                    },
+                    "audiences": {
+                      "type": "array",
+                      "metadata": {
+                        "description": "Required. The list of audiences that can appear in the issued token. Should be set to api://AzureADTokenExchange for Azure AD. It says what Microsoft identity platform should accept in the aud claim in the incoming token. This value represents Azure AD in your external identity provider and has no fixed value across identity providers - you might need to create a new application registration in your IdP to serve as the audience of this token."
+                      }
+                    },
+                    "issuer": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Required. The URL of the issuer to be trusted. Must match the issuer claim of the external token being exchanged."
+                      }
+                    },
+                    "subject": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "Required. The identifier of the external software workload within the external identity provider. Like the audience value, it has no fixed format, as each IdP uses their own - sometimes a GUID, sometimes a colon delimited identifier, sometimes arbitrary strings. The value here must match the sub claim within the token presented to Azure AD."
+                      }
+                    }
+                  },
+                  "resources": [
+                    {
+                      "type": "Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials",
+                      "apiVersion": "2024-11-30",
+                      "name": "[format('{0}/{1}', parameters('userAssignedIdentityName'), parameters('name'))]",
+                      "properties": {
+                        "audiences": "[parameters('audiences')]",
+                        "issuer": "[parameters('issuer')]",
+                        "subject": "[parameters('subject')]"
+                      }
+                    }
+                  ],
+                  "outputs": {
+                    "name": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The name of the federated identity credential."
+                      },
+                      "value": "[parameters('name')]"
+                    },
+                    "resourceId": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The resource ID of the federated identity credential."
+                      },
+                      "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities/federatedIdentityCredentials', parameters('userAssignedIdentityName'), parameters('name'))]"
+                    },
+                    "resourceGroupName": {
+                      "type": "string",
+                      "metadata": {
+                        "description": "The name of the resource group the federated identity credential was created in."
+                      },
+                      "value": "[resourceGroup().name]"
+                    }
+                  }
+                }
+              },
+              "dependsOn": [
+                "userAssignedIdentity"
+              ]
+            }
+          },
+          "outputs": {
+            "name": {
+              "type": "string",
+              "metadata": {
+                "description": "The name of the user assigned identity."
+              },
+              "value": "[parameters('name')]"
+            },
+            "resourceId": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource ID of the user assigned identity."
+              },
+              "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('name'))]"
+            },
+            "principalId": {
+              "type": "string",
+              "metadata": {
+                "description": "The principal ID (object ID) of the user assigned identity."
+              },
+              "value": "[reference('userAssignedIdentity').principalId]"
+            },
+            "clientId": {
+              "type": "string",
+              "metadata": {
+                "description": "The client ID (application ID) of the user assigned identity."
+              },
+              "value": "[reference('userAssignedIdentity').clientId]"
+            },
+            "resourceGroupName": {
+              "type": "string",
+              "metadata": {
+                "description": "The resource group the user assigned identity was deployed into."
+              },
+              "value": "[resourceGroup().name]"
+            },
+            "location": {
+              "type": "string",
+              "metadata": {
+                "description": "The location the resource was deployed into."
+              },
+              "value": "[reference('userAssignedIdentity', '2024-11-30', 'full').location]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2025-04-01",
       "name": "[format('ai-foundry-{0}-deploy', variables('uniqueSuffix'))]",
       "properties": {
         "expressionEvaluationOptions": {
@@ -17373,7 +17867,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "12738257442126553058"
+              "templateHash": "8567375115782900900"
             }
           },
           "parameters": {
@@ -17392,7 +17886,7 @@
             "location": {
               "type": "string",
               "metadata": {
-                "description": "Azure region (must support GPT-4.1-mini — use swedencentral)"
+                "description": "Azure region (must support GPT-5.4-mini — use swedencentral)"
               }
             },
             "tags": {
@@ -17456,16 +17950,16 @@
             {
               "type": "Microsoft.CognitiveServices/accounts/deployments",
               "apiVersion": "2025-06-01",
-              "name": "[format('{0}/{1}', parameters('accountName'), 'gpt-4.1-mini')]",
+              "name": "[format('{0}/{1}', parameters('accountName'), 'gpt-5.4-mini')]",
               "sku": {
-                "name": "Standard",
+                "name": "GlobalStandard",
                 "capacity": 30
               },
               "properties": {
                 "model": {
                   "format": "OpenAI",
-                  "name": "gpt-4.1-mini",
-                  "version": "2025-04-14"
+                  "name": "gpt-5.4-mini",
+                  "version": "2026-03-17"
                 },
                 "raiPolicyName": "Microsoft.DefaultV2"
               },
@@ -17488,7 +17982,7 @@
               },
               "dependsOn": [
                 "[resourceId('Microsoft.CognitiveServices/accounts', parameters('accountName'))]",
-                "[resourceId('Microsoft.CognitiveServices/accounts/deployments', parameters('accountName'), 'gpt-4.1-mini')]"
+                "[resourceId('Microsoft.CognitiveServices/accounts/deployments', parameters('accountName'), 'gpt-5.4-mini')]"
               ]
             }
           ],
@@ -17547,7 +18041,7 @@
               "metadata": {
                 "description": "GPT model deployment name"
               },
-              "value": "gpt-4.1-mini"
+              "value": "gpt-5.4-mini"
             }
           }
         }
@@ -17584,6 +18078,9 @@
           "containerRegistryServer": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', format('cr-{0}-deploy', variables('uniqueSuffix'))), '2025-04-01').outputs.loginServer.value]"
           },
+          "containerRegistryIdentityResourceId": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', format('identity-{0}-deploy', variables('uniqueSuffix'))), '2025-04-01').outputs.resourceId.value]"
+          },
           "logAnalyticsWorkspaceId": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', format('monitoring-{0}-deploy', variables('uniqueSuffix'))), '2025-04-01').outputs.logAnalyticsWorkspaceId.value]"
           },
@@ -17610,7 +18107,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "8899186829059165816"
+              "templateHash": "11234703524140183208"
             }
           },
           "parameters": {
@@ -17648,6 +18145,12 @@
               "type": "string",
               "metadata": {
                 "description": "Container Registry login server for pull authentication"
+              }
+            },
+            "containerRegistryIdentityResourceId": {
+              "type": "string",
+              "metadata": {
+                "description": "User-assigned identity resource ID for pulling images from the Container Registry"
               }
             },
             "logAnalyticsWorkspaceId": {
@@ -18335,7 +18838,7 @@
                     "value": [
                       {
                         "server": "[parameters('containerRegistryServer')]",
-                        "identity": "system"
+                        "identity": "[parameters('containerRegistryIdentityResourceId')]"
                       }
                     ]
                   },
@@ -18368,7 +18871,10 @@
                   },
                   "managedIdentities": {
                     "value": {
-                      "systemAssigned": true
+                      "systemAssigned": true,
+                      "userAssignedResourceIds": [
+                        "[parameters('containerRegistryIdentityResourceId')]"
+                      ]
                     }
                   }
                 },
@@ -19404,6 +19910,8 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', format('ai-foundry-{0}-deploy', variables('uniqueSuffix')))]",
+        "[resourceId('Microsoft.Resources/deployments', format('identity-{0}-deploy', variables('uniqueSuffix')))]",
+        "[extensionResourceId(resourceId('Microsoft.ContainerRegistry/registries', variables('crName')), 'Microsoft.Authorization/roleAssignments', guid(resourceId('Microsoft.ContainerRegistry/registries', variables('crName')), variables('caPullIdentityName'), 'AcrPull'))]",
         "[resourceId('Microsoft.Resources/deployments', format('cr-{0}-deploy', variables('uniqueSuffix')))]",
         "[resourceId('Microsoft.Resources/deployments', format('monitoring-{0}-deploy', variables('uniqueSuffix')))]",
         "[resourceId('Microsoft.Resources/deployments', format('sql-{0}-deploy', variables('uniqueSuffix')))]"
@@ -19457,7 +19965,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.41.2.15936",
-              "templateHash": "2606274728336393202"
+              "templateHash": "12819755596094960975"
             }
           },
           "parameters": {
@@ -19523,7 +20031,6 @@
             }
           },
           "variables": {
-            "acrPullRoleId": "7f951dda-4ed3-4680-a7ca-43fe172d538d",
             "azureAiOwnerRoleId": "b78c5d69-af96-48a3-bf8d-a8b4d589de94",
             "storageBlobContributorRoleId": "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
             "acrPushRoleId": "8311e382-0749-4cb8-b61a-304f252e45ec"
@@ -19551,17 +20058,6 @@
                 "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('azureAiOwnerRoleId'))]",
                 "principalId": "[parameters('principalId')]",
                 "principalType": "User"
-              }
-            },
-            {
-              "type": "Microsoft.Authorization/roleAssignments",
-              "apiVersion": "2022-04-01",
-              "scope": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('containerRegistryName'))]",
-              "name": "[guid(parameters('containerRegistryId'), parameters('containerAppPrincipalId'), variables('acrPullRoleId'))]",
-              "properties": {
-                "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('acrPullRoleId'))]",
-                "principalId": "[parameters('containerAppPrincipalId')]",
-                "principalType": "ServicePrincipal"
               }
             },
             {

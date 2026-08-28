@@ -1,5 +1,5 @@
 // AI Foundry Logistics Assistant — AI Foundry Module
-// AI Foundry Account (Hub) + Project + GPT-4.1-mini deployment
+// AI Foundry Account (Hub) + Project + GPT-5.4-mini deployment
 // Raw Bicep — no AVM module available for CognitiveServices/AIServices kind
 
 @description('AI Foundry Account (Hub) name')
@@ -8,7 +8,7 @@ param accountName string
 @description('AI Foundry Project name')
 param projectName string
 
-@description('Azure region (must support GPT-4.1-mini — use swedencentral)')
+@description('Azure region (must support GPT-5.4-mini — use swedencentral)')
 param location string
 
 @description('Resource tags')
@@ -65,21 +65,21 @@ resource aiAccountDiagnostics 'Microsoft.Insights/diagnosticSettings@2021-05-01-
 }
 
 // ──────────────────────────────────────────────
-// GPT-4.1-mini Model Deployment
+// GPT-5.4-mini Model Deployment
 // ──────────────────────────────────────────────
 
 resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-06-01' = {
   parent: aiAccount
-  name: 'gpt-4.1-mini'
+  name: 'gpt-5.4-mini'
   sku: {
-    name: 'Standard'
+    name: 'GlobalStandard'
     capacity: 30
   }
   properties: {
     model: {
       format: 'OpenAI'
-      name: 'gpt-4.1-mini'
-      version: '2025-04-14'
+      name: 'gpt-5.4-mini'
+      version: '2026-03-17'
     }
     raiPolicyName: 'Microsoft.DefaultV2'
   }

@@ -19,6 +19,9 @@ param containerImage string
 @description('Container Registry login server for pull authentication')
 param containerRegistryServer string
 
+@description('User-assigned identity resource ID for pulling images from the Container Registry')
+param containerRegistryIdentityResourceId string
+
 @description('Log Analytics Workspace resource ID for environment logging')
 param logAnalyticsWorkspaceId string
 
@@ -102,7 +105,7 @@ module containerApp 'br/public:avm/res/app/container-app:0.11.0' = {
     registries: [
       {
         server: containerRegistryServer
-        identity: 'system'
+        identity: containerRegistryIdentityResourceId
       }
     ]
     ingressExternal: true
@@ -122,6 +125,9 @@ module containerApp 'br/public:avm/res/app/container-app:0.11.0' = {
     ]
     managedIdentities: {
       systemAssigned: true
+      userAssignedResourceIds: [
+        containerRegistryIdentityResourceId
+      ]
     }
   }
 }

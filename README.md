@@ -2,7 +2,7 @@
 
 A production-ready Azure demo scenario that combines:
 
-- **Azure AI Foundry** Hub + Project with GPT-4.1-mini deployment
+- **Azure AI Foundry** Hub + Project with GPT-5.4-mini deployment
 - **Azure Container Apps** hosting a .NET 10 Razor Pages logistics dashboard
 - **Azure SQL** (General Purpose Serverless, auto-pause) with managed identity auth
 - **Azure Container Registry** for private image storage
@@ -31,7 +31,7 @@ User → Container App (HTTPS)
 | Storage Account | Standard_LRS |
 | Azure Container Registry | Standard |
 | AI Foundry (AIServices) | S0 — swedencentral |
-| GPT-4.1-mini deployment | Standard 30K TPM |
+| GPT-5.4-mini deployment | Global Standard 30K TPM |
 | Azure SQL Server | (AAD-only) |
 | Azure SQL Database | GP_S_Gen5_1 Serverless |
 | Container Apps Environment | Consumption |
@@ -69,7 +69,7 @@ The `AI_FOUNDRY_ENDPOINT` and `SQL_SERVER` environment variables are automatical
 4. Type a question in the AI assistant box, e.g.:
    - *"Which shipments are at risk of missing delivery?"*
    - *"Summarise the current exceptions and their impact"*
-5. GPT-4.1-mini responds with logistics context built from the live SQL data
+5. GPT-5.4-mini responds with logistics context built from the live SQL data
 
 ---
 
@@ -84,7 +84,7 @@ infra/                         Bicep IaC (AVM modules)
     storage.bicep              Storage for AI Foundry
     sql.bicep                  SQL Server + GP Serverless DB
     container-registry.bicep   ACR Standard
-    ai-foundry.bicep           AI Foundry Hub + Project + GPT-4.1-mini
+    ai-foundry.bicep           AI Foundry Hub + Project + GPT-5.4-mini
     container-apps.bicep       CAE + Container App
     role-assignments.bicep     All RBAC bindings
 

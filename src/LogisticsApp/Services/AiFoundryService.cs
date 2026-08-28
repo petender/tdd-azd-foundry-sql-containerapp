@@ -13,7 +13,7 @@ public class AiFoundryService
     public AiFoundryService(IConfiguration config, ILogger<AiFoundryService> logger)
     {
         _logger = logger;
-        _modelDeployment = config["AI_MODEL_DEPLOYMENT_NAME"] ?? "gpt-4.1-mini";
+        _modelDeployment = config["AI_MODEL_DEPLOYMENT_NAME"] ?? "gpt-5.4-mini";
         var endpoint = config["AI_FOUNDRY_ENDPOINT"];
         if (!string.IsNullOrEmpty(endpoint))
         {

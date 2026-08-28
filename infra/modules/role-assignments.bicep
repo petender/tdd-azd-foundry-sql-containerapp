@@ -51,7 +51,6 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing 
 // Role definition IDs
 // ──────────────────────────────────────────────
 
-var acrPullRoleId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 var azureAiOwnerRoleId = 'b78c5d69-af96-48a3-bf8d-a8b4d589de94'
 var storageBlobContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 var acrPushRoleId = '8311e382-0749-4cb8-b61a-304f252e45ec'
@@ -81,20 +80,6 @@ resource deployerAiOwner 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', azureAiOwnerRoleId)
     principalId: principalId
     principalType: 'User'
-  }
-}
-
-// ──────────────────────────────────────────────
-// Container App MI → Container Registry (AcrPull)
-// ──────────────────────────────────────────────
-
-resource containerAppAcrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(containerRegistryId, containerAppPrincipalId, acrPullRoleId)
-  scope: containerRegistry
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleId)
-    principalId: containerAppPrincipalId
-    principalType: 'ServicePrincipal'
   }
 }
 

@@ -1,5 +1,5 @@
 // AI Foundry Logistics Assistant — Main Orchestration
-// Azure AI Foundry Hub + Project + GPT-4.1-mini
+// Azure AI Foundry Hub + Project + GPT-5.4-mini
 // Azure Container Apps (.NET 10 logistics web app)
 // Azure SQL Database (General Purpose Serverless)
 targetScope = 'resourceGroup'
@@ -22,7 +22,7 @@ param projectName string = 'fsc'
 @description('Principal ID of the deploying user. Azure Developer CLI populates this automatically.')
 param principalId string
 
-@description('Azure region for AI Foundry resources (must support GPT-4.1-mini).')
+@description('Azure region for AI Foundry resources (must support GPT-5.4-mini).')
 param aiFoundryLocation string = 'swedencentral'
 
 @description('Container image to deploy. Updated by azd deploy after build.')
@@ -52,6 +52,7 @@ var aiAcctName   = 'ai-${take(projectName, 8)}-${take(environment, 3)}-${take(un
 var aiProjName   = 'aiproj-${projectName}-${environment}'
 var caeName      = 'cae-${projectName}-${environment}'
 var caName       = 'ca-${take(projectName, 16)}-${take(environment, 8)}'
+var caPullIdentityName = 'id-${projectName}-${environment}-acrpull'
 
 // ──────────────────────────────────────────────
 // Phase 1: Monitoring
@@ -107,6 +108,32 @@ module containerRegistry 'modules/container-registry.bicep' = {
   }
 }
 
+module containerPullIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.1' = {
+  name: 'identity-${uniqueSuffix}-deploy'
+  params: {
+    name: caPullIdentityName
+    location: location
+    tags: tags
+  }
+}
+
+resource containerRegistryResource 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
+  name: crName
+}
+
+resource containerPullRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(containerRegistryResource.id, caPullIdentityName, 'AcrPull')
+  scope: containerRegistryResource
+  properties: {
+    roleDefinitionId: subscriptionResourceId(
+      'Microsoft.Authorization/roleDefinitions',
+      '7f951dda-4ed3-4680-a7ca-43fe172d538d'
+    )
+    principalId: containerPullIdentity.outputs.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // ──────────────────────────────────────────────
 // Phase 3: AI Foundry (Hub + Project + Model)
 // ──────────────────────────────────────────────
@@ -135,6 +162,7 @@ module containerApps 'modules/container-apps.bicep' = {
     tags: tags
     containerImage: containerImage
     containerRegistryServer: containerRegistry.outputs.loginServer
+    containerRegistryIdentityResourceId: containerPullIdentity.outputs.resourceId
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     aiFoundryEndpoint: aiFoundry.outputs.endpoint
@@ -142,6 +170,9 @@ module containerApps 'modules/container-apps.bicep' = {
     sqlServerFqdn: sql.outputs.fullyQualifiedDomainName
     sqlDatabaseName: sql.outputs.databaseName
   }
+  dependsOn: [
+    containerPullRole
+  ]
 }
 
 // ──────────────────────────────────────────────

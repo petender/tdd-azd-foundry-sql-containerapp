@@ -38,7 +38,7 @@ Navigate to the resource group `rg-fsc-{env}`. Show the deployed resources:
 ### Step 1.3 — Show AI Foundry
 
 1. Open the AI Foundry resource → **Model deployments**
-2. Show GPT-4.1-mini deployment: Standard, 30K TPM
+2. Show GPT-5.4-mini deployment: Global Standard, 30K TPM
 3. Open **AI Foundry portal** link → show Hub + Project structure
 
 ---
@@ -74,7 +74,8 @@ Click **Ask**.
 
 ![AI response showing risk assessment](screenshots/02-ai-response.png)
 
-**Expected response**: GPT-4.1-mini identifies the delayed shipments and customs exception, gives a concise 2-3 sentence summary.
+**Expected response**: GPT-5.4-mini identifies the delayed shipments and customs exception,
+giving a concise 2-3 sentence summary.
 
 **Talking point**: The app builds a context string from live SQL data and sends it as a system prompt — the AI has real operational awareness, not canned responses.
 
